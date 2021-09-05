@@ -5,6 +5,8 @@ from src.settings import (
     WEEKDAYS,
     OUTPUT_COLORS,
     OUTPUT_FILE,
+    EVEN,
+    ODD,
 )
 from math import isnan
 import pandas as pd
@@ -17,12 +19,12 @@ def load() -> (list, str):
         filepath = input("Filepath is incorrect! Please, try again:\n").strip("'\"")
 
     try:
-        df = pd.read_excel(filepath, sheet_name=SHEET_NAME)
+        df = pd.read_excel(filepath, sheet_name=SHEET_NAME, engine="openpyxl")
     except Exception:
         print("Error occurred while opening schedule file!")
         raise
 
-    group = input("Input your group name\n").strip()
+    group = input("Input your group name:\n").strip()
     while not group or not group.isdigit():
         group = input("Incorrect group name! Please, try again:\n").strip()
 
@@ -56,26 +58,8 @@ def apply_mapping(rows: list):
         _map(ColumnIndex.CLASSROOM, Mapping.CLASSROOMS)
 
 
-def get_lengths(rows: list) -> list[int]:
-    return [max(map(lambda r: len(r[i]), rows)) for i in range(len(rows[0]))]
-
-
-def main():
-    rows, group = load()
-    rows = filter_by_group(rows, group)
-
-    if not rows:
-        print(f"Group '{group}' not found!")
-        return
-
-    cast_and_sort(rows)
-
-    apply_mapping(rows)
-
-    lengths = get_lengths(rows)
-
-    with open("src/template.html", 'rb') as f:
-        template = f.read().decode('utf-8')
+def make_schedule(rows: list) -> list[str]:
+    lengths = [max(map(lambda r: len(r[i]), rows)) for i in range(len(rows[0]))]
 
     last_wd = None
     colors = OUTPUT_COLORS if OUTPUT_COLORS else [""]
@@ -94,16 +78,40 @@ def main():
         for i in range(len(lengths)):
             row[i] += " " * (lengths[i] - len(row[i]))
 
-        del row[ColumnIndex.GROUP]
+        grouped.append("<span>" + "  ".join(row[:ColumnIndex.GROUP] + row[ColumnIndex.GROUP + 1:]) + "</span>")
 
-        grouped.append("  ".join(row))
-
-    if group:
+    if grouped:
         content.append(f"<code style=\"color: {colors[color_index]}\">\n" + "\n".join(grouped) + "\n</code>")
 
+    return content
+
+
+def main():
+    rows, group = load()
+    rows = filter_by_group(rows, group)
+
+    if not rows:
+        print(f"Group '{group}' not found!")
+        return
+
+    cast_and_sort(rows)
+
+    apply_mapping(rows)
+
+    with open("src/template.html", 'rb') as f:
+        template = f.read().decode('utf-8')
+
+    general = make_schedule(rows)
+    even = make_schedule(list(filter(lambda r: r[ColumnIndex.EVEN_ODD].lower() != ODD, rows)))
+    odd = make_schedule(list(filter(lambda r: r[ColumnIndex.EVEN_ODD].lower() != EVEN, rows)))
+
     with open(os.path.abspath(OUTPUT_FILE), 'wb') as output:
-        output.write(template.format(content="\n".join(content),
-                                     font=os.path.abspath("src/font.otf")).encode('utf-8'))
+        font_path = os.path.abspath(os.path.join("src", "font.otf"))
+        if os.sep == "\\":
+            font_path = font_path.replace("\\", "\\\\")
+
+        output.write(template.format(general="\n".join(general),
+                                     even="\n".join(even), odd="\n".join(odd), font=font_path).encode('utf-8'))
 
     print(f"Result: {os.path.abspath(OUTPUT_FILE)}")
 

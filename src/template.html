@@ -5,25 +5,65 @@
   <title>Расписание</title>
   <style>
     @font-face {{
-        font-family: "Code";
-        src: url("{font}") format("truetype");
-        font-style: normal;
-        font-weight: normal;
+        font-family: Code;
+        src: url("{font}") format("opentype");
     }}
     body {{
       background-color: #2b2b2b;
+      padding: 0 20px 40px 20px;
     }}
     code {{
       display: block;
-      margin: 15px 20px 20px 30px;
+      margin: 5px 20px 20px 30px;
       white-space: pre;
-      font-family: Code, Consolas;
+      font-family: Code;
+      line-height: 1.2em;
+    }}
+    h2 {{
+      margin: 40px 0 0 0;
+      font-family: Code;
+      color: #cbcbcb;
     }}
   </style>
 </head>
+
 <body>
+  <h2>Общее</h2>
   <div>
-{content}
+{general}
+  </div>
+
+  <h2>По чётным неделям</h2>
+  <div>
+{even}
+  </div>
+
+  <h2>По нечётным неделям</h2>
+  <div>
+{odd}
   </div>
 </body>
+
+<script>
+  function cleanSelection() {{
+    if(document.selection && document.selection.empty) {{
+      document.selection.empty();
+    }} else if (window.getSelection) {{
+      window.getSelection().removeAllRanges();
+    }}
+  }}
+
+  for (let row of document.getElementsByTagName("span")) {{
+      row.onclick = (event) => {{
+        cleanSelection();
+        const row = event.target;
+        row.style.opacity = (row.style.opacity === "0.7" || row.style.opacity === "0.3" ? null : "0.7");
+      }}
+      row.ondblclick = (event) => {{
+        cleanSelection();
+        const row = event.target;
+        row.style.opacity = (row.style.opacity === "0.3" ? null : "0.3");
+      }}
+  }}
+</script>
 </html>
