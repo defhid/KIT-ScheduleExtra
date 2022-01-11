@@ -4,4 +4,4 @@ The program extracts the schedule of your group from "kit-super-schedule.xlsx" f
 <br>
 Also, you can adjust the opacity of schedule rows.
 
-##### © *2021 Vladislav Mironov*
+##### © *2022 Vladislav Mironov*
