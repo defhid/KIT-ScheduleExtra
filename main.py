@@ -45,7 +45,7 @@ def cast_and_sort(rows: list):
                 if type(row[i]) is float and isnan(row[i]) \
                 else str(row[i]).strip()
 
-    rows.sort(key=lambda r: (WEEKDAYS.get(r[ColumnIndex.WEEKDAY].lower(), -1), r[ColumnIndex.TIME]))
+    rows.sort(key=lambda r: (WEEKDAYS.get(r[ColumnIndex.WEEKDAY].lower(), -1), r[ColumnIndex.TIME], r[ColumnIndex.EVEN_ODD]))
 
 
 def apply_mapping(rows: list):
