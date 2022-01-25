@@ -12,8 +12,13 @@ class Mapping:
     }
     EXERCISES = {
         'лаб. раб.'.lower(): "ЛР  ",
+        'л.р.'.lower(): "ЛР  ",
+        'лр'.lower(): "ЛР  ",
         'практика'.lower(): "ПР  ",
-        'лекция'.lower(): "Лек "
+        'п.р.'.lower(): "ПР  ",
+        'пр'.lower(): "ПР  ",
+        'лекция'.lower(): "Лек ",
+        'лек'.lower(): "Лек "
     }
     CLASSROOMS = {
         'спортзал'.lower(): 'с/з',
@@ -21,16 +26,27 @@ class Mapping:
 
 
 class ColumnIndex:
-    WEEKDAY = 1
     GROUP = 0
+    WEEKDAY = 1
     TIME = 2
     EVEN_ODD = 3
     SUBJECT = 4
     EXERCISE = 5
     CLASSROOM = 6
     BUILDING = 7
-    FIO = 8
+    FIO = 9
 
+
+COLUMNS_ORDER = [
+    ColumnIndex.WEEKDAY,
+    ColumnIndex.TIME,
+    ColumnIndex.EVEN_ODD,
+    ColumnIndex.SUBJECT,
+    ColumnIndex.EXERCISE,
+    ColumnIndex.CLASSROOM,
+    ColumnIndex.BUILDING,
+    ColumnIndex.FIO,
+]
 
 WEEKDAYS = {
     'пн'.lower(): 1,
@@ -51,9 +67,7 @@ OUTPUT_COLORS = [
     "#dc2e2e",  # red
 ]
 
-OUTPUT_FILE = 'output.html'
-
-SHEET_NAME = "Лист2"
+SHEET_NAME = "Лист1"
 
 EVEN = "чет".lower()
 ODD = "неч".lower()

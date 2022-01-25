@@ -1,10 +1,10 @@
 from src.settings import (
     Mapping,
     ColumnIndex,
+    COLUMNS_ORDER,
     SHEET_NAME,
     WEEKDAYS,
     OUTPUT_COLORS,
-    OUTPUT_FILE,
     EVEN,
     ODD,
 )
@@ -13,7 +13,7 @@ import pandas as pd
 import os
 
 
-def load() -> (list, str):
+def load() -> (str, list, str):
     filepath = input("Input path to schedule file (.xlsx):\n").strip("'\"")
     while not os.path.exists(filepath):
         filepath = input("Filepath is incorrect! Please, try again:\n").strip("'\"")
@@ -28,7 +28,7 @@ def load() -> (list, str):
     while not group or not group.isdigit():
         group = input("Incorrect group name! Please, try again:\n").strip()
 
-    return df.values.tolist(), group
+    return os.path.dirname(filepath), df.values.tolist(), group
 
 
 def filter_by_group(rows: list, group: str) -> list:
@@ -39,12 +39,19 @@ def filter_by_group(rows: list, group: str) -> list:
 
 
 def cast_and_sort(rows: list):
+    add = []
+
     for row in rows:
         for i in range(len(row)):
             row[i] = "-" \
                 if type(row[i]) is float and isnan(row[i]) \
                 else str(row[i]).strip()
-
+        if '/' in row[ColumnIndex.EVEN_ODD]:
+            row[ColumnIndex.EVEN_ODD] = EVEN
+            add.append(row.copy())
+            add[-1][ColumnIndex.EVEN_ODD] = ODD
+    
+    rows += add
     rows.sort(key=lambda r: (WEEKDAYS.get(r[ColumnIndex.WEEKDAY].lower(), -1), r[ColumnIndex.TIME], r[ColumnIndex.EVEN_ODD]))
 
 
@@ -56,6 +63,11 @@ def apply_mapping(rows: list):
         _map(ColumnIndex.SUBJECT, Mapping.SUBJECTS)
         _map(ColumnIndex.EXERCISE, Mapping.EXERCISES)
         _map(ColumnIndex.CLASSROOM, Mapping.CLASSROOMS)
+    
+    for row in rows:
+        row[ColumnIndex.WEEKDAY] = row[ColumnIndex.WEEKDAY].lower().capitalize()
+        row[ColumnIndex.TIME] = ":".join(str(row[ColumnIndex.TIME]).split(":")[:2])
+        row[ColumnIndex.FIO] = " ".join(x.lower().capitalize() for x in row[ColumnIndex.FIO].split())
 
 
 def make_schedule(rows: list) -> list[str]:
@@ -78,7 +90,7 @@ def make_schedule(rows: list) -> list[str]:
         for i in range(len(lengths)):
             row[i] += " " * (lengths[i] - len(row[i]))
 
-        grouped.append("<span>" + "  ".join(row[:ColumnIndex.GROUP] + row[ColumnIndex.GROUP + 1:]) + "</span>")
+        grouped.append("<span>" + "  ".join(map(lambda j: row[j], COLUMNS_ORDER)) + "</span>")
 
     if grouped:
         content.append(f"<code style=\"color: {colors[color_index]}\">\n" + "\n".join(grouped) + "\n</code>")
@@ -86,8 +98,17 @@ def make_schedule(rows: list) -> list[str]:
     return content
 
 
+def make_output_filename(directory) -> str:
+    out_path = os.path.join(directory, 'output.html')
+    i = 0
+    while os.path.exists(out_path):
+        i += 1
+        out_path = os.path.join(directory, 'output' + str(i) + '.html')
+    return out_path
+
+
 def main():
-    rows, group = load()
+    directory, rows, group = load()
     rows = filter_by_group(rows, group)
 
     if not rows:
@@ -105,7 +126,9 @@ def main():
     even = make_schedule(list(filter(lambda r: r[ColumnIndex.EVEN_ODD].lower() != ODD, rows)))
     odd = make_schedule(list(filter(lambda r: r[ColumnIndex.EVEN_ODD].lower() != EVEN, rows)))
 
-    with open(os.path.abspath(OUTPUT_FILE), 'wb') as output:
+    out_path = make_output_filename(directory)
+
+    with open(out_path, 'wb') as output:
         font_path = os.path.abspath(os.path.join("src", "font.otf"))
         if os.sep == "\\":
             font_path = font_path.replace("\\", "\\\\")
@@ -113,7 +136,7 @@ def main():
         output.write(template.format(general="\n".join(general),
                                      even="\n".join(even), odd="\n".join(odd), font=font_path).encode('utf-8'))
 
-    print(f"Result: {os.path.abspath(OUTPUT_FILE)}")
+    print(f"Result: {out_path}")
 
 
 if __name__ == '__main__':
